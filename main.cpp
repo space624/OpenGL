@@ -140,6 +140,34 @@ void prepareSingleBuffer() {
     glBindVertexArray(0);
 }
 
+void prepareInterleavedBuffer() {
+    float positions [] = {
+        -0.5f,-0.5f,0.0f,1.0f,0.0f,0.0f,
+        0.5f,-0.5f,0.0f, 0.0f,1.0f,0.0f,
+        0.0f,0.5f,0.0f, 0.0f,0.0f,1.0f
+    };
+
+    GLuint VAO, VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) 0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) ( 3 * sizeof(float) ));
+
+    glBindVertexArray(0);
+    glBindVertexArray(0);
+
+}
+
 int main(void) {
     
     if (!app->init()) { 
@@ -157,7 +185,7 @@ int main(void) {
     glViewport(0, 0, 800, 600);
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-    prepareSingleBuffer();
+    prepareInterleavedBuffer();
 
     while (app->update()) {
         GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
