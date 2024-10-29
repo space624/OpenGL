@@ -1,14 +1,14 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
+#include "glframework/core.h"
 
 #include <iostream>
 #include <string>
 
 #include "wrapper/checkError.h"
 #include "application/application.h"
+#include "glframework/shader.h"
 
-GLuint VAO, program;
+GLuint VAO;
+Shader* shader = nullptr;
 void frameBufferSizeCallBack(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
@@ -171,71 +171,7 @@ void prepareInterleavedBuffer() {
 }
 
 void prepareShader() {
-    const char* vertexShaderSource =
-        "#version 460 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-        "}\0";
-    const char* fragmentShaderSource =
-        "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "void main()\n"
-        "{\n"
-        "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-        "}\n\0";
-
-    //创建Shader程序
-    //VS  FS
-    GLuint vertex, fragment;
-    vertex = glCreateShader(GL_VERTEX_SHADER);
-    fragment = glCreateShader(GL_FRAGMENT_SHADER);
-
-    //输入Shader程序代码
-    glShaderSource(vertex, 1, &vertexShaderSource, NULL);
-    glShaderSource(fragment, 1, &fragmentShaderSource, NULL);
-
-    //Shader代码编译
-    glCompileShader(vertex);
-    glCompileShader(fragment);
-
-    //编译检查结果
-    int success = 0;
-    glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-    if (!success) { 
-        char infoLog[1024] = {0};
-        glGetShaderInfoLog(vertex, 1024, NULL, infoLog);
-        std::cout << "ERROR: Shader compile error --vertex :  " << infoLog << std::endl;
-    }
-
-    glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char infoLog[1024] = {0};
-        glGetShaderInfoLog(vertex, 1024, NULL, infoLog);
-        std::cout << "ERROR: Shader compile error --fragment :  " << infoLog << std::endl;
-    }
-
-    //创建Program
-    //GLuint program = glCreateProgram();
-
-    //编译好的结果放入Program
-    glAttachShader(program, vertex);
-    glAttachShader(program, fragment);
-
-    //链接
-    glLinkProgram(program);
-    //检查链接是否错误
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[1024] = { 0 };
-        glGetProgramInfoLog(program, 1024, NULL, infoLog);
-        std::cout << "ERROR: Shader link error --program :  " << infoLog << std::endl;
-    }
-
-    glDeleteShader(vertex);
-    glDeleteShader(fragment);
-
+    shader = new Shader("./assets/shaders/vertex.glsl", "./assets/shaders/fragment.glsl");
 }
 
 void prepareVAOForGLTriangles() {
@@ -270,15 +206,76 @@ void prepareVAOForGLTriangles() {
 
 }
 
+void prepareVAO() {
+    float positions [] = {
+        -0.5f,-0.5f,0.0f,
+        0.5f,-0.5f,0.0f,
+        0.0f,0.5f,0.0f,
+        0.5f,0.5f,0.0f
+    };
+
+    float colors [] = {
+        1.0f,0.0f,0.0f,
+        0.0f,1.0f,0.0f,
+        0.0f,0.0f,1.0f
+    };
+
+    unsigned int indices [] = {
+        0,1,2,
+        //2,1,3
+    };
+
+    GLuint POSVBO,COLORVBO;
+    GLuint EBO;
+    //GLuint VAO;
+
+    glGenBuffers(1, &POSVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, POSVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &COLORVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, COLORVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+
+
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, POSVBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*) 0);
+
+    //add color data
+    glBindBuffer(GL_ARRAY_BUFFER, COLORVBO);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*) 0);
+
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+    glBindVertexArray(0);
+
+}
+
 void render() {
     GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
 
     //绑定当前的program
-    glUseProgram(program);
+    shader->begin();
+
     //绑定当前的VAO
     glBindVertexArray(VAO);
     //绘制
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    //glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+    // glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(sizeof(int)*3));
+    glBindVertexArray(0);
+    shader->end();
+
 }
 
 int main(void) {
@@ -298,9 +295,10 @@ int main(void) {
     glViewport(0, 0, 800, 600);
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-    //prepareShader();
+    prepareShader();
     //prepareInterleavedBuffer();
-    prepareVAOForGLTriangles();
+    //prepareVAOForGLTriangles();
+    prepareVAO();
     while (app->update()) {
         
         render();
