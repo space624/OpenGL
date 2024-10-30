@@ -49,14 +49,32 @@ Shader::~Shader()
 {
 }
 
-void Shader::begin()
+void Shader::begin() const
 {
     GL_CALL(glUseProgram(mProgram));
 }
 
-void Shader::end()
+void Shader::end() const
 {
     GL_CALL(glUseProgram(0));
+}
+
+void Shader::setUniformFloat(const std::string name, const float& value) const
+{
+    GLint location = GL_CALL(glGetUniformLocation(mProgram, name.c_str()));
+    GL_CALL(glUniform1f(location, value));
+}
+
+void Shader::setVector3Float(const std::string name, const float& x, const float& y, const float& z) const
+{
+    GLint location = GL_CALL(glGetUniformLocation(mProgram, name.c_str()));
+    GL_CALL(glUniform3f(location, x, y, z));
+}
+
+void Shader::setVector3Float(const std::string name, const float* values) const
+{
+    GLint location = GL_CALL(glGetUniformLocation(mProgram, name.c_str()));
+    GL_CALL(glUniform3fv(location,1,values));
 }
 
 void Shader::checkShaderErrors(GLuint target, std::string type)

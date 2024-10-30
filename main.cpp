@@ -260,12 +260,16 @@ void prepareVAO() {
     glBindVertexArray(0);
 
 }
-
+float ucolor[] = { 0.9, 0.3, 0.25 };
 void render() {
     GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
 
     //绑定当前的program
     shader->begin();
+    shader->setUniformFloat("time", glfwGetTime());
+    shader->setUniformFloat("speed", glfwGetTime());
+    //shader->setVector3Float("uColor", ucolor);
+    //shader->setVector3Float("uColor", 0.3, 0.4, 0.5);
 
     //绑定当前的VAO
     glBindVertexArray(VAO);
