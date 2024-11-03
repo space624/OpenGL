@@ -6,9 +6,17 @@
 #include "wrapper/checkError.h"
 #include "application/application.h"
 #include "glframework/shader.h"
+#include "glframework/texture.h"
+
 
 GLuint VAO;
 Shader* shader = nullptr;
+Texture* texture = nullptr;
+Texture* grassTexture = nullptr;
+Texture* landTexture = nullptr;
+Texture* noiseTexture = nullptr;
+
+
 void frameBufferSizeCallBack(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
@@ -207,25 +215,59 @@ void prepareVAOForGLTriangles() {
 }
 
 void prepareVAO() {
-    float positions [] = {
+    /*float positions [] = {
         -0.5f,-0.5f,0.0f,
         0.5f,-0.5f,0.0f,
         0.0f,0.5f,0.0f,
         0.5f,0.5f,0.0f
     };
-
+    
     float colors [] = {
         1.0f,0.0f,0.0f,
         0.0f,1.0f,0.0f,
         0.0f,0.0f,1.0f
     };
 
+    float uvs [] = {
+        0.0f,0.0f,
+        1.0f,0.0f,
+        0.5f,1.0f
+    };
+
     unsigned int indices [] = {
         0,1,2,
         //2,1,3
     };
+    */
 
-    GLuint POSVBO,COLORVBO;
+    float positions [] = {
+        -0.5f,-0.5f,0.0f,
+        0.5f,-0.5f,0.0f,
+        -0.5f,0.5f,0.0f,
+        0.5f,0.5f,0.0f
+    }; 
+
+    float colors [] = {
+        1.0f,0.0f,0.0f,
+        0.0f,1.0f,0.0f,
+        0.0f,0.0f,1.0f,
+        0.5f,0.5f,0.5f
+    };
+
+    float uvs [] = {
+        0.0f,0.0f,
+        1.0f,0.0f,
+        0.0f,1.0f,
+        1.0f,1.0f
+    };
+
+    unsigned int indices [] = {
+        0,1,2,
+        2,1,3
+    };
+    
+
+    GLuint POSVBO,COLORVBO, UVVBO;
     GLuint EBO;
     //GLuint VAO;
 
@@ -236,6 +278,10 @@ void prepareVAO() {
     glGenBuffers(1, &COLORVBO);
     glBindBuffer(GL_ARRAY_BUFFER, COLORVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &UVVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, UVVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(uvs), uvs, GL_STATIC_DRAW);
 
 
     glGenBuffers(1, &EBO);
@@ -254,20 +300,39 @@ void prepareVAO() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*) 0);
 
+    glBindBuffer(GL_ARRAY_BUFFER, UVVBO);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (void*) 0);
+
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
     glBindVertexArray(0);
 
 }
+
 float ucolor[] = { 0.9, 0.3, 0.25 };
+
+void prepareTexture() {
+    //texture = new Texture("./assets/textures/goku.jpg", 0);
+    grassTexture = new Texture("./assets/textures/grass.jpg", 0);
+    landTexture = new Texture("./assets/textures/land.jpg", 1);
+    noiseTexture = new Texture("./assets/textures/noise.jpg", 2);
+}
+
 void render() {
     GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
 
     //绑定当前的program
-    shader->begin();
-    shader->setUniformFloat("time", glfwGetTime());
-    shader->setUniformFloat("speed", glfwGetTime());
+    shader->begin(); 
+    //shader->setUniformFloat("time", glfwGetTime());
+    //shader->setUniformFloat("speed", glfwGetTime());
+    shader->setInt("sampler", 0);
+
+    shader->setInt("grassSampler", 0);
+    shader->setInt("landSampler", 1);
+    shader->setInt("noiseSampler", 2);
+
     //shader->setVector3Float("uColor", ucolor);
     //shader->setVector3Float("uColor", 0.3, 0.4, 0.5);
 
@@ -275,7 +340,7 @@ void render() {
     glBindVertexArray(VAO);
     //绘制
     //glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     // glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(sizeof(int)*3));
     glBindVertexArray(0);
     shader->end();
@@ -303,6 +368,7 @@ int main(void) {
     //prepareInterleavedBuffer();
     //prepareVAOForGLTriangles();
     prepareVAO();
+    prepareTexture();
     while (app->update()) {
         
         render();
@@ -310,6 +376,9 @@ int main(void) {
     }
 
     app->destroy();
-    
+    //delete texture;
+    delete grassTexture;
+    delete landTexture;
+
     return 0;
 }

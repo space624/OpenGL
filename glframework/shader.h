@@ -13,6 +13,7 @@ public:
     void setUniformFloat(const std::string name, const float& value) const;
     void setVector3Float(const std::string name, const float& x, const float& y, const float& z) const;
     void setVector3Float(const std::string name, const float* values) const;
+    void setInt(const std::string& name, int value) const;
 
     GLuint getProgram() const { return mProgram; }
 private:
