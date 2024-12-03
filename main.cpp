@@ -16,6 +16,7 @@ Texture* grassTexture = nullptr;
 Texture* landTexture = nullptr;
 Texture* noiseTexture = nullptr;
 
+glm::mat4 transform(1.0);
 
 void frameBufferSizeCallBack(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -320,19 +321,94 @@ void prepareTexture() {
     noiseTexture = new Texture("./assets/textures/noise.jpg", 2);
 }
 
+
+//旋转
+void doRotationTransform() {
+    //构建一个旋转矩阵,绕着z轴旋转45度
+    transform = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(0.0, 0.0, 1.0));
+}
+
+//平移
+void doTranslationTransform() {
+    transform = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
+}
+
+//缩放
+void doScaleTransform() {
+    transform = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 1.0f));
+}
+
+void preTransform() {
+    //先平移在旋转
+    /* {
+        transform = glm::translate(transform, glm::vec3(0.6f, 0.0f, 0.0f));
+    } */
+
+    //先旋转再平移
+    /* {
+        transform = glm::rotate(transform, glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+    } */
+
+    //先做一次缩放, 再叠加平移
+    transform = glm::scale(transform, glm::vec3(1.0f, 1.0f, 1.0f));
+}
+
+//连续变换
+void doTransform() {
+    //glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(0.0, 0.0, 1.0));
+    //glm::mat4 translateMat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
+    ////transform = glm::translate(rotateMat, glm::vec3(0.5f, 0.0f, 0.0f));
+    //transform = translateMat * rotateMat;
+
+    //旋转
+    /* {
+        float angle = 1.0f;
+        transform = glm::rotate(transform, glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
+    }*/
+
+    //先平移在旋转
+    /* {
+        float angle = 1.0f;
+        **** transform = glm::translate(transform, glm::vec3(0.002f, 0.0f, 0.0f));
+        transform = glm::rotate(transform, glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
+    } */
+
+    //先旋转再平移
+    //preTransform做一次旋转然后在做平移
+    /* {
+        transform = glm::translate(transform, glm::vec3(0.01f, 0.0f, 0.0f));
+    } */
+
+    //先做一次缩放,再叠加平移
+    //preTransform做一次缩放
+    transform = glm::translate(transform, glm::vec3(0.01f, 0.0f, 0.0f));
+
+}
+
+float angle = 0.0f;
+void doRotaion() {
+    angle += 2.0f;
+    transform = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0, 0.0, 1.0));
+}
+
 void render() {
     GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
 
     //绑定当前的program
     shader->begin(); 
-    //shader->setUniformFloat("time", glfwGetTime());
+    shader->setUniformFloat("time", glfwGetTime());
     //shader->setUniformFloat("speed", glfwGetTime());
     shader->setInt("sampler", 0);
+    //doRotaion();
+    shader->setMatrix4x4("transform", transform);
 
     shader->setInt("grassSampler", 0);
     shader->setInt("landSampler", 1);
     shader->setInt("noiseSampler", 2);
 
+    shader->setUniformFloat("width", landTexture->getWidth());
+    shader->setUniformFloat("height", landTexture->getWidth());
+     
     //shader->setVector3Float("uColor", ucolor);
     //shader->setVector3Float("uColor", 0.3, 0.4, 0.5);
 
@@ -349,6 +425,39 @@ void render() {
 
 int main(void) {
     
+    //向量
+    glm::vec2 v0(0);
+    glm::vec3 v1(0);
+    glm::vec4 v2(0);
+
+    glm::vec4 vadd = v2 + glm::vec4(0);
+    auto mul = vadd * v2;   //对应元素相乘, 放到对应位置
+
+    //点乘
+    auto dotRes = glm::dot(vadd, v2);
+    //叉乘   只能给三维使用
+    glm::vec3 vt0, vt1;
+    auto crossRes = glm::cross(vt0, vt1);
+
+    //矩阵
+    glm::mat4 m0(1.0);
+    glm::mat4 m1 = glm::identity<glm::mat4>();
+    glm::mat2 mm2(1.0);
+    glm::mat3 mm3(1.0);
+    glm::mat2x3 mm4(1.0);
+
+    std::cout << glm::to_string(mm4) << std::endl;
+
+    auto madd = m0 + m1;
+    auto mmulti = m0 * m1;
+    auto res = m0 * v2;
+
+    //transpose 转置矩阵
+    auto transMat = glm::transpose(madd);
+
+    //inverse 逆矩阵
+    auto inverseMat = glm::inverse(madd);
+
     if (!app->init()) { 
         return -1;
     }
@@ -369,8 +478,14 @@ int main(void) {
     //prepareVAOForGLTriangles();
     prepareVAO();
     prepareTexture();
+
+    //doRotationTransform();
+    //doTranslationTransform();
+    //doScaleTransform();
+    //doTransform();
+    preTransform();
     while (app->update()) {
-        
+        doTransform();
         render();
         
     }

@@ -15,6 +15,8 @@ public:
     void setVector3Float(const std::string name, const float* values) const;
     void setInt(const std::string& name, int value) const;
 
+    void setMatrix4x4(const std::string name, const glm::mat4 value) const;
+
     GLuint getProgram() const { return mProgram; }
 private:
     void checkShaderErrors(GLuint target, std::string type);

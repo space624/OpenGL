@@ -22,14 +22,35 @@ Texture::Texture(const std::string& path, unsigned int unit)
     glBindTexture(GL_TEXTURE_2D, mTexture);
 
     //传输纹理数据,开辟显存
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    //int width = mWidth;
+    //int height = mHeight;
+    //for (int level = 0; true; ++level) { 
+    //    //把当前的mipmap对应的数据发往GPU
+    //    glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    //    //是否退出循环
+    //    if (width == 1 && height == 1) { 
+    //        break;
+    //    }
+
+    //    //计算下一次循环的宽度和高度
+    //    width = width > 1 ? width / 2 : 1;
+    //    height = height > 1 ? height / 2 : 1;
+
+    //}
 
     //释放数据
     stbi_image_free(data);
 
+    //生成mipmap
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     //设置纹理过滤方式
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 
     //设置纹理的包裹方式
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);  //u
